@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ghost Checker v2.5 — The Architect Edition
 
-## Getting Started
+**Ghost Checker** adalah alat analisis privasi lokal yang dirancang khusus untuk mendeteksi akun Instagram yang tidak mengikuti Anda kembali (Unfollowers) tanpa memerlukan login. Dikembangkan dengan prinsip **Privacy-First**, aplikasi ini memastikan 100% keamanan data pengguna karena seluruh proses perbandingan dilakukan di memori browser (Client-side), sehingga tidak ada risiko akun terkena *checkpoint* atau *ban* oleh Meta.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 💎 Fitur Utama (Core Features)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Universal Discovery Engine v3.2**: Algoritma rekursif cerdas yang mampu mendeteksi username di berbagai skema JSON Instagram (2024-2025).
+- **Liquid-Glass UI (V5.0)**: Estetika desain modern dengan transparansi tinggi, Gaussian blur 80px, dan sistem grid 8px yang harmonis.
+- **Zero-Login Policy**: Tidak membutuhkan username atau password Instagram. Keamanan akun 100% terjamin.
+- **Fluid Responsive Architecture**: Tampilan sempurna dan ergonomis di perangkat mobile (iPhone/Android), tablet, hingga desktop 4K.
+- **Instant Result Utility**: Fitur pencarian real-time dan mekanisme "One-Tap Copy" untuk kemudahan manajemen akun di aplikasi Instagram.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🛠️ Stack Teknologi (Tech Stack)
 
-## Learn More
+- **Framework**: Next.js 16 (Turbopack Enabled)
+- **Language**: TypeScript (Strict Mode)
+- **Styling**: Modern CSS (Vanilla) with Soft-Grid System
+- **Processing**: Client-side JSON Stream API & Recursive Crawling Algorithm
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📖 Panduan Penggunaan (How to Use)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. **Persiapkan Data**:
+   - Buka Instagram Meta Accounts Center.
+   - Pilih "Download your information" > "Some of your information".
+   - Centang hanya **Followers and following**.
+   - **PENTING**: Pilih Format **JSON** dan Date Range **All Time**.
+2. **Ekstrak File**: Setelah menerima email dari Meta, unduh dan ekstrak file ZIP. Cari folder `connections/followers_and_following`.
+3. **Analisis**:
+   - Buka [Ghost Checker Live](https://ig-checker-mirsydfchrynto.vercel.app).
+   - Unggah file `following.json` dan `followers_1.json`.
+   - Sistem akan menampilkan daftar akun yang tidak mengikuti Anda kembali secara instan.
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🛡️ Jaminan Privasi (Privacy Assurance)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Aplikasi ini beroperasi sepenuhnya di sisi klien. Tidak ada data, file, atau username yang dikirim ke server eksternal. Kami tidak memiliki database, API pihak ketiga, atau sistem pelacakan. Privasi Anda adalah prioritas mutlak kami.
+
+---
+
+## 👨‍💻 Kontribusi & Lisensi
+
+Diciptakan oleh **mirsydfchrynto** (The Architect).
+Lisensi: MIT. Bebas digunakan untuk keperluan personal.
+
+---
+
+*Ghost Checker — Designed for the Ghost-free Social Experience.*
