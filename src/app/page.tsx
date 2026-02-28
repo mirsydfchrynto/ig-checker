@@ -16,25 +16,44 @@ export default function Home() {
   const followingInputRef = useRef<HTMLInputElement>(null);
   const followersInputRef = useRef<HTMLInputElement>(null);
 
-  // RECURSIVE DISCOVERY ENGINE V3.2: Universal detection for any Instagram JSON schema
-  const extractUsernamesRecursive = (obj: any): string[] => {
+  // HYPER-AGGRESSIVE PARSER v4.0: Searching for usernames in EVERY possible Meta JSON structure
+  const extractUsernamesGodMode = (obj: any): string[] => {
     const usernames = new Set<string>();
+
     const recurse = (current: any) => {
       if (!current || typeof current !== 'object') return;
+
       if (Array.isArray(current)) {
         current.forEach(item => recurse(item));
         return;
       }
+
+      // Pattern 1: Meta's standard "string_list_data" -> "value"
       if (current.string_list_data && Array.isArray(current.string_list_data)) {
-        current.string_list_data.forEach((item: any) => {
-          if (item?.value && typeof item.value === 'string') usernames.add(item.value);
+        current.string_list_data.forEach((sub: any) => {
+          if (sub?.value && typeof sub.value === 'string') usernames.add(sub.value);
         });
       }
-      if (typeof current.value === 'string' && typeof current.href === 'string' && current.value.length > 0) {
-        usernames.add(current.value);
+
+      // Pattern 2: Meta's "title" used as username (Standard in some exports)
+      if (current.title && typeof current.title === 'string' && current.title.length > 0) {
+        const forbidden = ["", "Followers", "Following", "Followers and Following"];
+        if (!forbidden.includes(current.title) && !current.title.includes(" ")) {
+          usernames.add(current.title);
+        }
       }
+
+      // Pattern 3: Direct "value" key (Used in newer Professional account exports)
+      if (current.value && typeof current.value === 'string' && current.value.length > 0) {
+        if (!current.value.startsWith('http') && !current.value.includes(" ")) {
+          usernames.add(current.value);
+        }
+      }
+
+      // Traverse all keys
       Object.values(current).forEach(val => recurse(val));
     };
+
     recurse(obj);
     return Array.from(usernames);
   };
@@ -42,19 +61,25 @@ export default function Home() {
   const processFile = (file: File, type: 'following' | 'followers') => {
     setError(null);
     if (!file.name.toLowerCase().endsWith('.json')) {
-      setError("Wajib menggunakan file .json asli dari Instagram.");
+      setError(`Format Salah: Pastikan Anda memilih file .json, bukan file .zip atau .html.`);
       return;
     }
+
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const json = JSON.parse(e.target?.result as string);
-        const extracted = extractUsernamesRecursive(json);
-        if (extracted.length === 0) throw new Error("Format salah.");
+        const extracted = extractUsernamesGodMode(json);
+        
+        if (extracted.length === 0) {
+          setError(`Gagal: Tidak ditemukan username di ${file.name}. Pastikan file ini berasal dari folder 'connections/followers_and_following'.`);
+          return;
+        }
+
         if (type === 'following') setFollowing(extracted);
         else setFollowers(extracted);
       } catch (err) {
-        setError(`Gagal membaca ${file.name}. Pastikan file asli dari folder 'connections'.`);
+        setError(`Error: File ${file.name} rusak atau bukan JSON asli Instagram.`);
       }
     };
     reader.readAsText(file);
@@ -101,8 +126,8 @@ export default function Home() {
   return (
     <main className="container">
       <header className="main-header fadeIn">
-        <div style={{ display: 'inline-flex', padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '16px', marginBottom: '16px', border: '1px solid var(--glass-border)' }}>
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <div style={{ display: 'inline-flex', padding: '12px', background: 'rgba(255,255,255,0.04)', borderRadius: '14px', marginBottom: '16px', border: '1px solid var(--glass-border)' }}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 10h.01M15 10h.01M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/>
           </svg>
         </div>
@@ -111,36 +136,36 @@ export default function Home() {
       </header>
 
       {error && (
-        <div style={{ background: 'rgba(255,59,48,0.1)', color: '#ff453a', padding: '14px 20px', borderRadius: '16px', marginBottom: '24px', textAlign: 'center', fontSize: '0.9rem', border: '1px solid rgba(255,59,48,0.2)', fontWeight: '600' }}>
+        <div style={{ background: 'rgba(255,59,48,0.08)', color: '#ff453a', padding: '12px 16px', borderRadius: '12px', marginBottom: '24px', textAlign: 'center', fontSize: '0.85rem', border: '1px solid rgba(255,59,48,0.2)', fontWeight: '600' }}>
           ⚠️ {error}
         </div>
       )}
 
       {step === 1 && (
         <section className="card fadeIn">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: '800' }}>Instruksi Persiapan</h2>
-            <a href="https://accountscenter.instagram.com/your_information/" target="_blank" style={{ color: '#888', textDecoration: 'none', fontSize: '0.8rem', fontWeight: '700', border: '1px solid #333', padding: '8px 14px', borderRadius: '10px' }}>Buka Meta ↗</a>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: '800' }}>Panduan Ekspor (Penting!)</h2>
+            <a href="https://accountscenter.instagram.com/your_information/" target="_blank" style={{ color: '#888', textDecoration: 'none', fontSize: '0.75rem', fontWeight: '700', border: '1px solid #333', padding: '6px 12px', borderRadius: '8px' }}>Pusat Akun Meta ↗</a>
           </div>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {[ { num: '01', title: 'Download Data', desc: 'Buka pusat akun Meta, pilih "Download your information".' },
-               { num: '02', title: 'Centang Kategori', desc: 'Pilih "Some info" dan centang hanya "Followers and following".' },
-               { num: '03', title: 'Format JSON', desc: 'Pilih Format: JSON (Wajib!) dan Date: All Time.' }
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {[ { num: '01', title: 'Request Data di Instagram', desc: 'Pilih "Download your information" > "Some of your information" > Centang "Followers and following".' },
+               { num: '02', title: 'Wajib Format JSON', desc: 'Ubah format HTML menjadi JSON (Date: All Time). Tunggu email dari Meta.' },
+               { num: '03', title: 'Ekstrak File ZIP', desc: 'Download file dari email, EKSTRAK ZIP-nya, cari folder "connections/followers_and_following".' }
             ].map((s, i) => (
-              <div key={i} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                <div style={{ background: '#fff', color: '#000', width: '30px', height: '30px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '0.8rem', flexShrink: 0 }}>{s.num}</div>
+              <div key={i} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                <div style={{ background: '#fff', color: '#000', width: '24px', height: '24px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '0.75rem', flexShrink: 0 }}>{s.num}</div>
                 <div>
-                  <span style={{ fontWeight: '700', color: '#eee', display: 'block', marginBottom: '2px' }}>{s.title}</span>
-                  <p style={{ color: '#666', fontSize: '0.9rem', lineHeight: '1.5' }}>{s.desc}</p>
+                  <span style={{ fontWeight: '700', color: '#eee', display: 'block', marginBottom: '2px', fontSize: '0.95rem' }}>{s.title}</span>
+                  <p style={{ color: '#666', fontSize: '0.85rem', lineHeight: '1.4' }}>{s.desc}</p>
                 </div>
               </div>
             ))}
           </div>
 
-          <div style={{ marginTop: '40px', textAlign: 'center' }}>
+          <div style={{ marginTop: '32px', textAlign: 'center' }}>
             <button className="btn-primary" onClick={() => setStep(2)}>
-              Sudah Siap, Analisis Sekarang
+              Mulai Analisis Sekarang
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{marginLeft: '10px'}}><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </button>
           </div>
@@ -149,16 +174,16 @@ export default function Home() {
 
       {step === 2 && (
         <section className="card fadeIn">
-          <h2 style={{ fontSize: '1.4rem', fontWeight: '800', textAlign: 'center', marginBottom: '8px' }}>Unggah JSON</h2>
-          <p style={{ textAlign: 'center', color: '#666', fontSize: '0.9rem', marginBottom: '32px' }}>Unggah file asli hasil ekspor Instagram kamu.</p>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: '800', textAlign: 'center', marginBottom: '4px' }}>Unggah File JSON</h2>
+          <p style={{ textAlign: 'center', color: '#666', fontSize: '0.85rem', marginBottom: '24px' }}>Pilih file following.json dan followers_1.json</p>
           
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
             {(['following', 'followers'] as const).map((t) => (
               <div key={t} onDragEnter={(e) => handleDrag(e, t)} onDragLeave={(e) => handleDrag(e, t)} onDragOver={(e) => handleDrag(e, t)} onDrop={(e) => handleDrop(e, t)}>
-                <span style={{ color: '#444', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px', display: 'block' }}>{t === 'following' ? '1. following.json' : '2. followers_1.json'}</span>
+                <span style={{ color: '#444', fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', display: 'block' }}>{t === 'following' ? '1. following.json' : '2. followers_1.json'}</span>
                 <div className={`upload-zone ${following.length > 0 && t === 'following' ? 'success' : ''} ${followers.length > 0 && t === 'followers' ? 'success' : ''} ${dragActive.type === t ? 'drag-active' : ''}`} onClick={() => (t === 'following' ? followingInputRef : followersInputRef).current?.click()}>
-                  <div style={{ fontSize: '2rem', marginBottom: '8px' }}>{(t === 'following' ? following.length : followers.length) > 0 ? '✅' : '📥'}</div>
-                  <span style={{ fontWeight: '700', fontSize: '0.85rem' }}>{(t === 'following' ? following.length : followers.length) > 0 ? `${t === 'following' ? following.length : followers.length} Akun Terbaca` : 'Cari file'}</span>
+                  <div style={{ fontSize: '1.75rem', marginBottom: '4px' }}>{(t === 'following' ? following.length : followers.length) > 0 ? '✅' : '📥'}</div>
+                  <span style={{ fontWeight: '700', fontSize: '0.8rem' }}>{(t === 'following' ? following.length : followers.length) > 0 ? `${t === 'following' ? following.length : followers.length} Akun` : 'Ketuk & Pilih File'}</span>
                 </div>
                 <input type="file" ref={t === 'following' ? followingInputRef : followersInputRef} accept=".json" onChange={(e) => e.target.files?.[0] && processFile(e.target.files[0], t)} style={{ display: 'none' }} />
               </div>
@@ -166,53 +191,53 @@ export default function Home() {
           </div>
 
           {loading && (
-            <div style={{ marginTop: '32px', textAlign: 'center' }}>
-              <div style={{ width: '24px', height: '24px', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s infinite linear', margin: '0 auto 12px' }}></div>
-              <p style={{ color: '#888', fontWeight: '600', fontSize: '0.85rem' }}>Mencocokkan database...</p>
+            <div style={{ marginTop: '24px', textAlign: 'center' }}>
+              <div style={{ width: '20px', height: '20px', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s infinite linear', margin: '0 auto 8px' }}></div>
+              <p style={{ color: '#888', fontWeight: '600', fontSize: '0.8rem' }}>Sinkronisasi data...</p>
             </div>
           )}
 
-          <div style={{ marginTop: '32px', textAlign: 'center' }}>
-            <button className="btn-secondary" onClick={() => { setFollowing([]); setFollowers([]); setError(null); setStep(1); }}>Kembali</button>
+          <div style={{ marginTop: '24px', textAlign: 'center' }}>
+            <button className="btn-secondary" onClick={() => { setFollowing([]); setFollowers([]); setError(null); setStep(1); }}>Bantuan</button>
           </div>
         </section>
       )}
 
       {step === 3 && (
         <section className="card fadeIn">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
             <div>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: '800' }}>Hasil Analisis</h2>
-              <p style={{ color: '#ff453a', fontWeight: '700', fontSize: '1rem', marginTop: '2px' }}>{unfollowers.length} akun tidak folback.</p>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: '800' }}>Hasil Analisis</h2>
+              <p style={{ color: '#ff453a', fontWeight: '700', fontSize: '0.9rem', marginTop: '2px' }}>{unfollowers.length} orang tidak folback kamu.</p>
             </div>
-            <button className="btn-secondary" onClick={() => { setFollowing([]); setFollowers([]); setUnfollowers([]); setStep(2); }} style={{ padding: '8px 16px', fontSize: '0.75rem' }}>Ulangi</button>
+            <button className="btn-secondary" onClick={() => { setFollowing([]); setFollowers([]); setUnfollowers([]); setStep(2); }} style={{ padding: '6px 12px', fontSize: '0.7rem' }}>Ulangi</button>
           </div>
 
-          <div style={{ position: 'relative', marginBottom: '20px' }}>
-            <svg style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" placeholder="Cari username..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '14px 14px 14px 44px', color: '#fff', fontSize: '0.95rem', outline: 'none' }} />
+          <div style={{ position: 'relative', marginBottom: '16px' }}>
+            <svg style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="Cari username..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '12px 12px 12px 40px', color: '#fff', fontSize: '0.9rem', outline: 'none' }} />
           </div>
 
           <div className="results-list">
             {filteredUnfollowers.length > 0 ? filteredUnfollowers.map((u, i) => (
               <div key={i} className="list-item" onClick={() => copyToClipboard(u)} style={{ cursor: 'pointer' }}>
-                <span style={{ fontWeight: '700', color: '#eee', fontSize: '0.9rem' }}>@{u}</span>
-                <div className={`status-badge ${copied === u ? 'badge-copied' : 'badge-ghost'}`}>{copied === u ? 'Tersalin' : 'Gak Folback'}</div>
+                <span style={{ fontWeight: '700', color: '#eee', fontSize: '0.85rem' }}>@{u}</span>
+                <div className={`status-badge ${copied === u ? 'badge-copied' : 'badge-ghost'}`}>{copied === u ? 'Copied' : 'Gak Folback'}</div>
               </div>
             )) : (
-              <div style={{ padding: '60px 20px', textAlign: 'center', color: '#444' }}>
-                <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🥂</div>
-                <p style={{ fontWeight: '600' }}>{searchQuery ? 'Tidak ditemukan.' : 'Bersih! Tidak ada "Ghost".'}</p>
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: '#444' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🥂</div>
+                <p style={{ fontWeight: '600', fontSize: '0.9rem' }}>{searchQuery ? 'Tidak ditemukan.' : 'Bersih! Tidak ada "Ghost".'}</p>
               </div>
             )}
           </div>
-          <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.8rem', color: '#444', fontWeight: '600' }}>Tip: Klik username untuk menyalin & unfollow di IG.</p>
+          <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '0.75rem', color: '#444', fontWeight: '600' }}>Ketuk username untuk menyalin & unfollow di Instagram.</p>
         </section>
       )}
 
-      <footer style={{ marginTop: '64px', textAlign: 'center', opacity: 0.3 }}>
-        <p style={{ fontSize: '0.7rem', fontWeight: '900', letterSpacing: '1.5px', marginBottom: '4px' }}>GHOST CHECKER V2.5 — FINAL MASTERPIECE</p>
-        <p style={{ fontSize: '0.65rem', color: '#555', fontWeight: '700' }}>THE ARCHITECT EDITION • NO DATA LEAVES YOUR DEVICE</p>
+      <footer style={{ marginTop: '48px', textAlign: 'center', opacity: 0.3 }}>
+        <p style={{ fontSize: '0.6rem', fontWeight: '900', letterSpacing: '1.2px', marginBottom: '4px' }}>GHOST CHECKER V2.6 — HYPER-AGGRESSIVE DISCOVERY</p>
+        <p style={{ fontSize: '0.55rem', color: '#555', fontWeight: '700' }}>THE ARCHITECT EDITION • PRIVACY IS A HUMAN RIGHT</p>
       </footer>
 
       <style jsx>{`
